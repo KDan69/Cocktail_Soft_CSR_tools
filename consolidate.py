@@ -11,11 +11,9 @@ def consolidate_csr(input_dir, output_file):
     file_list.sort()
 
     with open(output_file, 'wb') as outfile:
-        # Write header first (no separator after)
         with open(header_path, 'rb') as header:
             outfile.write(header.read())
 
-        # Write .csr files with separators between them
         for i, filename in enumerate(file_list):
             file_path = os.path.join(input_dir, filename)
             with open(file_path, 'rb') as infile:
@@ -32,4 +30,5 @@ if __name__ == "__main__":
         sys.exit(1)
 
     folder, output = sys.argv[1:]
+
     consolidate_csr(folder, output)
