@@ -47,10 +47,10 @@ def split_mc(input_file, output_dir):
             out.write(chunk)
 
         print(
-            f"Extracted {output_filename} | "
-            f"Offset {start:X} | "
+            f"Extracted {output_filename} ("
+            f"Offset {start:X} | Size: "
             f"{width_px}x{height_px} | "
-            f"{chunk_size} bytes"
+            f"{chunk_size} bytes)"
         )
 
         chunk_count += 1
