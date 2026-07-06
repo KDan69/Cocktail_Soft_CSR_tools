@@ -8,7 +8,7 @@ Most important bytes are the first two (or four perhaps) with magic numbers `4D 
 `4D 43 00 4F 00 00 03 18` - 24x24 image (note - the image width is given in multiple of 8, so 0x03 actually means 3*8 in pixels)<br>
 `4D 43 00 4F 00 00 04 18` - 32x24 image<br>
 ## Notes
-- Color palettes aren't supported yet, the images are converted to 16 shades of grey
+- The color palette needs to be loaded from an external image. The images will be converted to 16 shades of grey without it.
 - The output PNG files are actually 8bpp because of the limitation of the Python PIL library
 ## Usage
 ### split.py
