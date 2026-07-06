@@ -1,7 +1,19 @@
 import sys
 from PIL import Image
 
-def make_csr_header(width, height):  
+def load_palette(palette_path):
+    ref = Image.open(palette_path)
+
+    if ref.mode != "P":
+        ref = ref.convert("P", palette=Image.Palette.ADAPTIVE, colors=16)
+
+    raw = ref.getpalette() or []
+    palette = raw[:48]
+    palette = palette + [0] * (768 - len(palette))
+    return palette
+
+
+def make_csr_header(width, height):
     if width % 8 != 0:
         raise ValueError("Width must be a multiple of 8 pixels!")
 
@@ -20,8 +32,17 @@ def parse_csr_header(data):
     height = data[7]
     return width, height
 
-def png_to_csr(png_path, csr_path):
-    img = Image.open(png_path).convert("P")
+def png_to_csr(png_path, csr_path, palette_path=None):
+    src = Image.open(png_path).convert("RGB")
+
+    if palette_path:
+        palette = load_palette(palette_path)
+        pal_img = Image.new("P", (1, 1))
+        pal_img.putpalette(palette)
+        img = src.quantize(palette=pal_img, dither=Image.Dither.NONE)
+    else:
+        img = src.convert("P")
+
     width, height = img.size
 
     if width % 8 != 0:
@@ -43,7 +64,7 @@ def png_to_csr(png_path, csr_path):
 
     print(f"CSR written: {csr_path} ({width}x{height})")
 
-def csr_to_png(csr_path, png_path):
+def csr_to_png(csr_path, png_path, palette_path=None):
     with open(csr_path, "rb") as f:
         data = f.read()
 
@@ -67,30 +88,35 @@ def csr_to_png(csr_path, png_path):
     img = Image.new("P", (width, height))
     img.putdata(pixels)
 
-    # default 16-color grayscale palette
-    palette = []
-    for i in range(16):
-        g = int(i * 255 / 15)
-        palette.extend([g, g, g])
-    img.putpalette(palette + [0] * (768 - len(palette)))
+    if palette_path:
+        palette = load_palette(palette_path)
+    else:
+        palette = []
+        for i in range(16):
+            g = int(i * 255 / 15)
+            palette.extend([g, g, g])
+        palette = palette + [0] * (768 - len(palette))
+
+    img.putpalette(palette)
 
     img.save(png_path)
     print(f"PNG written: {png_path} ({width}x{height})")
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    if len(sys.argv) not in (3, 4):
         print("Usage:")
-        print("  python csr_png.py input_file output_file")
+        print("  python csr_png.py input_file output_file [image_file_with_a_palette]")
         sys.exit(1)
 
-    input_file, output_file = sys.argv[1:]
+    input_file, output_file = sys.argv[1:3]
+    palette_file = sys.argv[3] if len(sys.argv) == 4 else None
     in_ext = input_file.lower().rsplit(".", 1)[-1]
     out_ext = output_file.lower().rsplit(".", 1)[-1]
 
     if in_ext == "png" and out_ext == "csr":
-        png_to_csr(input_file, output_file)
+        png_to_csr(input_file, output_file, palette_file)
     elif in_ext == "csr" and out_ext == "png":
-        csr_to_png(input_file, output_file)
+        csr_to_png(input_file, output_file, palette_file)
     else:
         print("Error: What the hell are you trying to convert here?")
         print("Expected:")
